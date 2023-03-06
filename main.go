@@ -8,6 +8,9 @@ import (
 	"unsafe"
 	"encoding/binary"
 	"bytes"
+	"encoding/csv"
+	"log"
+	"io"
 )
 
 const (
@@ -105,6 +108,54 @@ func write_handler(n int, size int) {
 	fmt.Println("writer: elapsed", (time.Now().UnixNano() - tickStart), "nanoseconds")
 }
 
+func read_csv() [][]string {
+	f, err := os.Open("result.csv")
+	defer f.Close()
+
+	ret := make([][]string, 0)
+
+	if err != nil {
+		return ret
+	}
+
+	r := csv.NewReader(f)
+
+	for {
+		record, err := r.Read()
+
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		ret = append(ret, record)
+	}
+
+	return ret
+}
+
+func write_csv(data [][]string) {
+	f, err := os.Create("result.csv")
+    defer f.Close()
+
+    if err != nil {
+
+        log.Fatalln("failed to open file", err)
+    }
+
+    w := csv.NewWriter(f)
+    defer w.Flush()
+
+    for _, record := range data {
+        if err := w.Write(record); err != nil {
+            log.Fatalln("error writing record to file", err)
+        }
+    }
+}
+
 func read_handler(n int, size int) {
 	rb := new(RingBuffer)
 
@@ -163,7 +214,22 @@ func read_handler(n int, size int) {
 	}
 
 	fmt.Println("reader: elapsed", (time.Now().UnixNano() - tickStart), "nanoseconds")
-	fmt.Printf("reader: span %d(ns), max %d(ns), min %d(ns), avg %d(ns)\n", sum, max, min, sum / int64(n))
+
+	loc, err := time.LoadLocation("Local")
+	if err != nil {
+		panic(err.Error())
+	}
+
+	t := time.Now().In(loc).Format("2006.01.02 15:04:05")
+	fmt.Printf("reader: time %s, span %d(ns), max %d(ns), min %d(ns), avg %d(ns)\n", t, sum, max, min, sum / int64(n))
+
+	cd := read_csv()
+	if len(cd) == 0 {
+		cd = append(cd, []string{"no", "time", "span(ns)", "max(ns)", "min(ns)", "avg(ns)"})
+	}
+
+	cd = append(cd, []string{strconv.FormatInt(int64(len(cd)), 10), t, strconv.FormatInt(sum, 10), strconv.FormatInt(max, 10), strconv.FormatInt(min, 10), strconv.FormatInt(sum / int64(n), 10)})
+	write_csv(cd)
 }
 
 func main() {
