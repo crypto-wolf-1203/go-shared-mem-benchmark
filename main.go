@@ -225,10 +225,10 @@ func read_handler(n int, size int) {
 
 	cd := read_csv()
 	if len(cd) == 0 {
-		cd = append(cd, []string{"no", "time", "span(ns)", "max(ns)", "min(ns)", "avg(ns)"})
+		cd = append(cd, []string{"no", "time", "count", "message size", "span(ns)", "max(ns)", "min(ns)", "avg(ns)"})
 	}
 
-	cd = append(cd, []string{strconv.FormatInt(int64(len(cd)), 10), t, strconv.FormatInt(sum, 10), strconv.FormatInt(max, 10), strconv.FormatInt(min, 10), strconv.FormatInt(sum / int64(n), 10)})
+	cd = append(cd, []string{strconv.FormatInt(int64(len(cd)), 10), t, strconv.FormatInt(int64(n), 10), strconv.FormatInt(int64(size), 10), strconv.FormatInt(sum, 10), strconv.FormatInt(max, 10), strconv.FormatInt(min, 10), strconv.FormatInt(sum / int64(n), 10)})
 	write_csv(cd)
 }
 
